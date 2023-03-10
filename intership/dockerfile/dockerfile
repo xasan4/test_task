@@ -1,0 +1,30 @@
+# Use the latest Ubuntu LTS release as the base image
+FROM ubuntu:latest
+
+# Install SQL Server prerequisites
+RUN apt-get update \
+    && apt-get install -y curl apt-transport-https gnupg \
+    && curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add - \
+    && curl https://packages.microsoft.com/config/ubuntu/20.04/mssql-server-2019.list | tee /etc/apt/sources.list.d/mssql-server.list \
+    && apt-get update \
+    && apt-get install -y mssql-server
+
+# Set the environment variables required by SQL Server
+ENV ACCEPT_EULA=Y
+ENV MSSQL_SA_PASSWORD=Qwe123456
+
+# Expose the SQL Server port
+EXPOSE 1433
+
+# Start the SQL Server service and create a database and table
+CMD /opt/mssql/bin/sqlservr & sleep 10 \
+    && /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P Qwe123456 -Q "CREATE DATABASE music" \
+    && /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P Qwe123456 -d Music -Q "CREATE TABLE playlist (id serial unique, name VARCHAR(255) not null, singer VARCHAR(255), duration INT not null)"
+
+# To build an image from this Dockerfile and start a container, 
+# run the following commands in your terminal:
+
+# docker build -t sql-server-music .
+# docker run -d -p 1433:1433 sql-server-music
+
+
